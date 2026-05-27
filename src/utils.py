@@ -44,7 +44,7 @@ def format_artifact_digest(artifact: Dict[str, Any], max_length: int = 200) -> s
         if isinstance(value, list):
             summary_parts.append(f"{key}: [{len(value)} items]")
         elif isinstance(value, dict):
-            summary_parts.append(f"{key}: {{{len(value)}} fields}")
+            summary_parts.append(f"{key}: {len(value)} fields")
         elif isinstance(value, str) and len(value) > 50:
             summary_parts.append(f"{key}: {value[:50]}...")
         else:
