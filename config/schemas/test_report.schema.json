@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Test Report",
+  "description": "Отчёт о тестировании от Tester",
+  "type": "object",
+  "required": ["summary", "results", "issues"],
+  "properties": {
+    "summary": {
+      "type": "object",
+      "required": ["total", "passed", "failed", "skipped"],
+      "properties": {
+        "total": {"type": "integer", "minimum": 0},
+        "passed": {"type": "integer", "minimum": 0},
+        "failed": {"type": "integer", "minimum": 0},
+        "skipped": {"type": "integer", "minimum": 0},
+        "duration_seconds": {"type": "number"}
+      }
+    },
+    "results": {
+      "type": "array",
+      "description": "Результаты по каждому тесту",
+      "items": {
+        "type": "object",
+        "required": ["test_id", "name", "status"],
+        "properties": {
+          "test_id": {"type": "string"},
+          "name": {"type": "string"},
+          "status": {"type": "string", "enum": ["passed", "failed", "skipped"]},
+          "duration_ms": {"type": "number"},
+          "error_message": {"type": "string"},
+          "stack_trace": {"type": "string"}
+        }
+      }
+    },
+    "issues": {
+      "type": "array",
+      "description": "Найденные проблемы",
+      "items": {
+        "type": "object",
+        "required": ["severity", "description"],
+        "properties": {
+          "severity": {"type": "string", "enum": ["critical", "high", "medium", "low"]},
+          "description": {"type": "string"},
+          "related_tests": {"type": "array", "items": {"type": "string"}},
+          "recommendation": {"type": "string"}
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "description": "Покрытие кода тестами",
+      "properties": {
+        "line_coverage": {"type": "number", "minimum": 0, "maximum": 100},
+        "branch_coverage": {"type": "number", "minimum": 0, "maximum": 100}
+      }
+    },
+    "passed": {
+      "type": "boolean",
+      "description": "Все ли тесты пройдены"
+    }
+  },
+  "additionalProperties": false
+}

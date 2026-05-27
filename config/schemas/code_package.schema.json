@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Code Package",
+  "description": "Пакет кода от Builder",
+  "type": "object",
+  "required": ["files", "dependencies", "build_instructions"],
+  "properties": {
+    "files": {
+      "type": "array",
+      "description": "Список файлов с кодом",
+      "items": {
+        "type": "object",
+        "required": ["path", "content", "language"],
+        "properties": {
+          "path": {"type": "string"},
+          "content": {"type": "string"},
+          "language": {"type": "string"},
+          "description": {"type": "string"}
+        }
+      },
+      "minItems": 1
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "Зависимости проекта",
+      "items": {
+        "type": "object",
+        "required": ["name", "version"],
+        "properties": {
+          "name": {"type": "string"},
+          "version": {"type": "string"},
+          "type": {"type": "string", "enum": ["runtime", "dev", "optional"]}
+        }
+      }
+    },
+    "build_instructions": {
+      "type": "string",
+      "description": "Инструкции по сборке и запуску"
+    },
+    "environment_variables": {
+      "type": "array",
+      "description": "Необходимые переменные окружения",
+      "items": {
+        "type": "object",
+        "required": ["name", "description"],
+        "properties": {
+          "name": {"type": "string"},
+          "description": {"type": "string"},
+          "default": {"type": "string"},
+          "required": {"type": "boolean"}
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
