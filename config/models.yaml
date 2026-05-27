@@ -1,0 +1,37 @@
+# Карта ролей → моделей
+# Для single-LLM все роли используют одну модель
+# При необходимости расширения можно указать разные модели для разных ролей
+
+models:
+  default:
+    api_key_env: "LLM_API_KEY"
+    base_url_env: "LLM_BASE_URL"
+    model_env: "LLM_MODEL"
+    
+  # Заглушка для single-LLM режима
+  orchestrator:
+    <<: *default
+  researcher:
+    <<: *default
+  architect:
+    <<: *default
+  tdd_engineer:
+    <<: *default
+  builder:
+    <<: *default
+  prompt_engineer:
+    <<: *default
+  tester:
+    <<: *default
+  critic:
+    <<: *default
+  security:
+    <<: *default
+
+# Настройки по умолчанию
+settings:
+  temperature: 0.7
+  max_tokens: 4096
+  timeout: 60
+  max_retries: 3
+  retry_delay: 2

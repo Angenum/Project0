@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Security Audit",
+  "description": "Отчёт об аудите безопасности от Security Auditor",
+  "type": "object",
+  "required": ["summary", "vulnerabilities", "compliance", "recommendations"],
+  "properties": {
+    "summary": {
+      "type": "string",
+      "description": "Общее резюме аудита"
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": ["critical", "high", "medium", "low"],
+      "description": "Общий уровень риска"
+    },
+    "vulnerabilities": {
+      "type": "array",
+      "description": "Найденные уязвимости",
+      "items": {
+        "type": "object",
+        "required": ["id", "severity", "category", "description"],
+        "properties": {
+          "id": {"type": "string"},
+          "severity": {"type": "string", "enum": ["critical", "high", "medium", "low"]},
+          "category": {"type": "string"},
+          "description": {"type": "string"},
+          "location": {"type": "string"},
+          "cwe_id": {"type": "string"},
+          "remediation": {"type": "string"}
+        }
+      }
+    },
+    "compliance": {
+      "type": "object",
+      "description": "Соответствие стандартам безопасности",
+      "properties": {
+        "owasp_top10": {"type": "boolean"},
+        "data_protection": {"type": "boolean"},
+        "authentication": {"type": "boolean"},
+        "authorization": {"type": "boolean"}
+      }
+    },
+    "recommendations": {
+      "type": "array",
+      "description": "Рекомендации по улучшению безопасности",
+      "items": {"type": "string"}
+    },
+    "approved": {
+      "type": "boolean",
+      "description": "Пройден ли аудит безопасности"
+    }
+  },
+  "additionalProperties": false
+}

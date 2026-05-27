@@ -1,0 +1,114 @@
+steps:
+  - id: 1
+    name: orchestrator
+    role: "Orchestrator"
+    prompt_file: "prompts/01_orchestrator.md"
+    output_artifact: "plan.json"
+    schema: "config/schemas/plan.schema.json"
+    timeout: 120
+    input_from: []
+    on_failure:
+      retry_step: 1
+      max_retries: 2
+
+  - id: 2
+    name: researcher
+    role: "Researcher"
+    prompt_file: "prompts/02_researcher.md"
+    output_artifact: "context.json"
+    schema: "config/schemas/context.schema.json"
+    timeout: 180
+    input_from: [1]
+    on_failure:
+      retry_step: 2
+      max_retries: 2
+
+  - id: 3
+    name: architect
+    role: "Architect"
+    prompt_file: "prompts/03_architect.md"
+    output_artifact: "ard.json"
+    schema: "config/schemas/ard.schema.json"
+    timeout: 180
+    input_from: [1, 2]
+    on_failure:
+      retry_step: 3
+      max_retries: 2
+
+  - id: 4
+    name: tdd_engineer
+    role: "TDD Engineer"
+    prompt_file: "prompts/04_tdd.md"
+    output_artifact: "tdd.json"
+    schema: "config/schemas/tdd.schema.json"
+    timeout: 180
+    input_from: [1, 2, 3]
+    on_failure:
+      retry_step: 4
+      max_retries: 2
+
+  - id: 5
+    name: builder
+    role: "Builder"
+    prompt_file: "prompts/05_builder.md"
+    output_artifact: "code_package.json"
+    schema: "config/schemas/code_package.schema.json"
+    timeout: 300
+    input_from: [1, 2, 3, 4]
+    on_failure:
+      retry_step: 5
+      max_retries: 2
+
+  - id: 6
+    name: prompt_engineer
+    role: "Prompt Engineer"
+    prompt_file: "prompts/06_prompt_engineer.md"
+    output_artifact: "prompt_package.json"
+    schema: "config/schemas/prompt_package.schema.json"
+    timeout: 180
+    input_from: [1, 2, 3, 4, 5]
+    on_failure:
+      retry_step: 6
+      max_retries: 2
+
+  - id: 7
+    name: tester
+    role: "Tester"
+    prompt_file: "prompts/07_tester.md"
+    output_artifact: "test_report.json"
+    schema: "config/schemas/test_report.schema.json"
+    timeout: 180
+    input_from: [1, 2, 3, 4, 5, 6]
+    on_failure:
+      retry_step: 5
+      max_retries: 2
+
+  - id: 8
+    name: critic
+    role: "Critic"
+    prompt_file: "prompts/08_critic.md"
+    output_artifact: "quality_review.json"
+    schema: "config/schemas/quality_review.schema.json"
+    timeout: 180
+    input_from: [1, 2, 3, 4, 5, 6, 7]
+    on_failure:
+      retry_step: 5
+      max_retries: 1
+
+  - id: 9
+    name: security
+    role: "Security Auditor"
+    prompt_file: "prompts/09_security.md"
+    output_artifact: "security_audit.json"
+    schema: "config/schemas/security_audit.schema.json"
+    timeout: 180
+    input_from: [1, 2, 3, 4, 5, 6, 7, 8]
+    on_failure:
+      retry_step: 9
+      max_retries: 2
+
+global:
+  default_timeout: 180
+  max_feedback_loops: 2
+  artifact_store_path: "artifacts"
+  log_file: "pipeline.log"

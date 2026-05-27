@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Prompt Package",
+  "description": "Пакет промптов от Prompt Engineer",
+  "type": "object",
+  "required": ["package_name", "prompts", "usage_guide"],
+  "properties": {
+    "package_name": {
+      "type": "string",
+      "description": "Название пакета промптов"
+    },
+    "prompts": {
+      "type": "array",
+      "description": "Список промптов в пакете",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "template", "variables"],
+        "properties": {
+          "id": {"type": "string"},
+          "name": {"type": "string"},
+          "template": {"type": "string"},
+          "variables": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "description"],
+              "properties": {
+                "name": {"type": "string"},
+                "description": {"type": "string"},
+                "default": {"type": "string"}
+              }
+            }
+          },
+          "examples": {"type": "array", "items": {"type": "string"}}
+        }
+      },
+      "minItems": 1
+    },
+    "usage_guide": {
+      "type": "string",
+      "description": "Руководство по использованию пакета"
+    },
+    "best_practices": {
+      "type": "array",
+      "description": "Рекомендации по использованию",
+      "items": {"type": "string"}
+    }
+  },
+  "additionalProperties": false
+}

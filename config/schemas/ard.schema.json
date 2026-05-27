@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Architecture Design Document",
+  "description": "Архитектурный документ от Architect",
+  "type": "object",
+  "required": ["overview", "components", "interfaces", "data_flow"],
+  "properties": {
+    "overview": {
+      "type": "string",
+      "description": "Общий обзор архитектуры"
+    },
+    "components": {
+      "type": "array",
+      "description": "Список компонентов системы",
+      "items": {
+        "type": "object",
+        "required": ["name", "responsibility", "type"],
+        "properties": {
+          "name": {"type": "string"},
+          "responsibility": {"type": "string"},
+          "type": {"type": "string", "enum": ["service", "module", "library", "database", "api", "ui"]},
+          "dependencies": {"type": "array", "items": {"type": "string"}},
+          "technology": {"type": "string"}
+        }
+      },
+      "minItems": 1
+    },
+    "interfaces": {
+      "type": "array",
+      "description": "Интерфейсы между компонентами",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "protocol"],
+        "properties": {
+          "from": {"type": "string"},
+          "to": {"type": "string"},
+          "protocol": {"type": "string"},
+          "methods": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "data_flow": {
+      "type": "string",
+      "description": "Описание потока данных в системе"
+    },
+    "diagrams": {
+      "type": "array",
+      "description": "Ссылки на диаграммы или их текстовое описание",
+      "items": {"type": "string"}
+    }
+  },
+  "additionalProperties": false
+}

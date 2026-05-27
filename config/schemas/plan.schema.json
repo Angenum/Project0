@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Plan",
+  "description": "План декомпозиции цели на подзадачи от Orchestrator",
+  "type": "object",
+  "required": ["goal", "tasks", "dependencies"],
+  "properties": {
+    "goal": {
+      "type": "string",
+      "description": "Исходная цель, поставленная пользователем"
+    },
+    "tasks": {
+      "type": "array",
+      "description": "Список подзадач для достижения цели",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "description", "priority"],
+        "properties": {
+          "id": {"type": "string"},
+          "name": {"type": "string"},
+          "description": {"type": "string"},
+          "priority": {"type": "integer", "minimum": 1, "maximum": 5},
+          "estimated_complexity": {"type": "string", "enum": ["low", "medium", "high"]}
+        }
+      },
+      "minItems": 1
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "Зависимости между задачами",
+      "items": {
+        "type": "object",
+        "required": ["from", "to"],
+        "properties": {
+          "from": {"type": "string"},
+          "to": {"type": "string"}
+        }
+      }
+    },
+    "success_criteria": {
+      "type": "array",
+      "description": "Критерии успешного выполнения плана",
+      "items": {"type": "string"},
+      "minItems": 1
+    }
+  },
+  "additionalProperties": false
+}
