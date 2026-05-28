@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 
 from langchain_core.messages import HumanMessage
@@ -16,10 +17,12 @@ from .schemas import (
     TesterReport,
     CriticReview,
     SecurityAudit,
+    PipelineError,
 )
 from .state import PipelineState
 from .validation import invoke_with_validation, ArtifactValidationError
 from .cost_control import check_budget, merge_step_usage
+from .metrics import STEP_DURATION, STEP_TOKENS, STEP_COST
 
 logger = logging.getLogger(__name__)
 
@@ -54,15 +57,31 @@ def orchestrator_node(state: PipelineState) -> dict[str, Any]:
             _orchestrator_runnable, messages, OrchestratorPlan,
             step_name=step, thread_id=_thread_id(state), max_retries=2,
         )
+        cost_update = merge_step_usage(state, step, usage)
+        STEP_TOKENS.labels(step_name=step, model=usage.get("model", "gpt-4o")).inc(usage.get("total_tokens", 0))
+        STEP_COST.labels(step_name=step, model=usage.get("model", "gpt-4o")).inc(usage.get("cost_usd", 0.0))
         return {
             "artifacts": {"orchestrator_plan": validated.model_dump()},
             "messages": [HumanMessage(content="Orchestrator plan generated.")],
             "current_step": step,
-            "metadata": merge_step_usage(state, step, usage)["metadata"],
+            "metadata": cost_update["metadata"],
         }
     except ArtifactValidationError as exc:
-        logger.exception("[%s] Failed", step)
-        return {"error": f"Orchestrator failed: {exc}", "current_step": step}
+        logger.exception("[%s] Failed", step, extra={"step": step, "thread_id": _thread_id(state)})
+        return {
+            "error": PipelineError(
+                step=step, category="validation", message=str(exc), retryable=True
+            ).model_dump(),
+            "current_step": step,
+        }
+    except Exception as exc:
+        logger.exception("[%s] Unexpected error", step, extra={"step": step, "thread_id": _thread_id(state)})
+        return {
+            "error": PipelineError(
+                step=step, category="unknown", message=str(exc), retryable=False
+            ).model_dump(),
+            "current_step": step,
+        }
 
 
 def researcher_node(state: PipelineState) -> dict[str, Any]:
@@ -137,6 +156,7 @@ def builder_node(state: PipelineState) -> dict[str, Any]:
     step = "builder"
     if stop := check_budget(state, step):
         return stop
+    start = time.monotonic()
     try:
         ard = state["artifacts"].get("architect_ard", {})
         tests = state["artifacts"].get("tdd_tests", {})
@@ -165,14 +185,25 @@ def builder_node(state: PipelineState) -> dict[str, Any]:
             _builder_runnable, messages, BuilderCode,
             step_name=step, thread_id=_thread_id(state), max_retries=2,
         )
+        cost_update = merge_step_usage(state, step, usage)
+        STEP_DURATION.labels(step_name=step).observe(time.monotonic() - start)
+        STEP_TOKENS.labels(step_name=step, model=usage.get("model", "gpt-4o")).inc(usage.get("total_tokens", 0))
         return {
             "artifacts": {"builder_code": validated.model_dump()},
             "flags": {"tests_passed": False, "critic_passed": False},
             "current_step": step,
-            "metadata": merge_step_usage(state, step, usage)["metadata"],
+            "metadata": cost_update["metadata"],
         }
     except ArtifactValidationError as exc:
-        return {"error": f"Builder failed: {exc}", "current_step": step}
+        return {
+            "error": PipelineError(step=step, category="validation", message=str(exc), retryable=True).model_dump(),
+            "current_step": step,
+        }
+    except Exception as exc:
+        return {
+            "error": PipelineError(step=step, category="unknown", message=str(exc), retryable=False).model_dump(),
+            "current_step": step,
+        }
 
 
 def prompt_engineer_node(state: PipelineState) -> dict[str, Any]:

@@ -24,3 +24,13 @@ def get_checkpointer() -> Any:
         return saver
     sqlite_path = os.getenv("CHECKPOINT_DB", "checkpoints.db")
     return SqliteSaver.from_conn_string(sqlite_path)
+
+
+async def close_checkpointer(checkpointer: Any) -> None:
+    """Graceful shutdown для async checkpointer."""
+    if checkpointer is None:
+        return
+    if hasattr(checkpointer, "close"):
+        await checkpointer.close()
+    elif hasattr(checkpointer, "__aexit__"):
+        await checkpointer.__aexit__(None, None, None)

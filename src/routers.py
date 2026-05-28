@@ -38,3 +38,12 @@ def route_after_approval(state: PipelineState) -> str:
     if state.get("error") and "Human rejected" in state["error"]:
         return "__end__"
     return "__continue__"
+
+
+def route_on_error(state: PipelineState) -> Literal["__end__", "builder"]:
+    """Если ошибка retryable — возвращаемся к builder для recovery. Иначе — END."""
+    error = state.get("error")
+    if isinstance(error, dict) and error.get("retryable"):
+        logger.info("[router] Retryable error at %s -> builder", error.get("step"))
+        return "builder"
+    return "__end__"

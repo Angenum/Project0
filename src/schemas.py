@@ -61,3 +61,18 @@ class SecurityAudit(BaseModel):
     passed: bool = Field(description="Аудит пройден")
     risks: List[Dict[str, Any]] = Field(default_factory=list)
     recommendations: List[str] = Field(default_factory=list)
+
+
+from datetime import datetime
+from typing import Literal
+
+
+class PipelineError(BaseModel):
+    """Типизированная ошибка пайплайна с метаданными для роутинга."""
+    step: str = Field(description="Узел, где произошла ошибка")
+    category: Literal["validation", "budget", "llm_timeout", "human_reject", "unknown"] = Field(
+        description="Категория ошибки"
+    )
+    message: str = Field(description="Человекочитаемое описание")
+    retryable: bool = Field(description="Можно ли retry")
+    timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())

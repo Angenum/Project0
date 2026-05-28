@@ -38,3 +38,13 @@ class PipelineState(TypedDict):
     metadata: Annotated[dict[str, Any], _merge_dicts]
     current_step: str
     error: Optional[str]
+
+
+def get_retry_count(state: PipelineState, key: str) -> int:
+    """Безопасный getter для retry counter."""
+    return state.get("retry_counters", {}).get(key, 0)
+
+
+def get_flag(state: PipelineState, key: str, default: bool = False) -> bool:
+    """Безопасный getter для флага."""
+    return state.get("flags", {}).get(key, default)
