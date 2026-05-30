@@ -1,4 +1,4 @@
-.PHONY: install test lint format run docker-up docker-down
+.PHONY: install test lint format run docker-up docker-down docs
 
 install:
 	pip install -e ".[dev,postgres]"
@@ -15,7 +15,10 @@ format:
 	ruff check --fix src tests
 
 run:
-	python -m src.run
+	python -m src
+
+docs:
+	python scripts/export_graph.py
 
 docker-up:
 	docker compose up --build -d

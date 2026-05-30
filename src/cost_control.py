@@ -1,9 +1,11 @@
 """Бюджетный контроллер и агрегация стоимости."""
+
 from __future__ import annotations
 
 import logging
 from typing import Any
 
+from .schemas import make_pipeline_error
 from .state import PipelineState
 from .validation import estimate_cost
 
@@ -26,15 +28,18 @@ def check_budget(state: PipelineState, step_name: str) -> dict[str, Any] | None:
             budget,
         )
         return {
-            "error": f"Budget exceeded at step '{step_name}': ${current_cost:.4f} >= ${budget:.4f}",
+            "error": make_pipeline_error(
+                step_name,
+                "budget",
+                f"Budget exceeded: ${current_cost:.4f} >= ${budget:.4f}",
+                retryable=False,
+            ),
             "current_step": step_name,
         }
     return None
 
 
-def merge_step_usage(
-    state: PipelineState, step_name: str, usage: dict[str, Any]
-) -> dict[str, Any]:
+def merge_step_usage(state: PipelineState, step_name: str, usage: dict[str, Any]) -> dict[str, Any]:
     """Формирует обновление metadata с агрегированными токенами и стоимостью."""
     meta = state.get("metadata", {})
     steps_meta: dict[str, Any] = meta.get("steps", {})

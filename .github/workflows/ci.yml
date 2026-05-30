@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main, langGraph]
+  pull_request:
+    branches: [main, langGraph]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: sk-test-dummy
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -e ".[dev,postgres]"
+
+      - name: Run tests
+        run: make test
+
+      - name: Run linters
+        run: make lint
+
+      - name: Export graph docs
+        run: make docs

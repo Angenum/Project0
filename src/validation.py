@@ -1,22 +1,26 @@
 """Движок валидации артефактов с retry и cost-трекингом."""
+
 from __future__ import annotations
 
 import json
 import logging
 import re
-from typing import Any, Type, Tuple
+from typing import Any, TypeVar
 
-from langchain_core.messages import HumanMessage
-from langchain_core.runnables import RunnableConfig
+from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from pydantic import BaseModel, ValidationError
 
 from .observability import get_step_config
 
 logger = logging.getLogger(__name__)
 
+T = TypeVar("T", bound=BaseModel)
+
 
 class ArtifactValidationError(Exception):
     """Артефакт не прошёл JSON Schema / Pydantic валидацию."""
+
     pass
 
 
@@ -32,12 +36,15 @@ def _strip_markdown_fences(raw: str) -> str:
 
 def parse_json_output(raw: str) -> dict[str, Any]:
     try:
-        return json.loads(_strip_markdown_fences(raw))
+        data = json.loads(_strip_markdown_fences(raw))
     except json.JSONDecodeError as exc:
         raise ArtifactValidationError(f"Invalid JSON: {exc}") from exc
+    if not isinstance(data, dict):
+        raise ArtifactValidationError("Expected JSON object")
+    return data
 
 
-def validate_artifact(raw_output: str, schema_cls: Type[BaseModel]) -> BaseModel:
+def validate_artifact(raw_output: str, schema_cls: type[T]) -> T:
     data = parse_json_output(raw_output)
     try:
         return schema_cls.model_validate(data)
@@ -58,14 +65,14 @@ def estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
 
 
 def invoke_with_validation(
-    runnable,
-    messages: list,
-    schema_cls: Type[BaseModel],
+    runnable: RunnableSerializable[Any, Any],
+    messages: list[BaseMessage],
+    schema_cls: type[T],
     step_name: str,
     thread_id: str,
     model: str = "gpt-4o",
     max_retries: int = 2,
-) -> Tuple[BaseModel, dict[str, Any]]:
+) -> tuple[T, dict[str, Any]]:
     """
     Вызывает LLM, валидирует JSON, при ошибке retry.
     Возвращает (validated_model, usage_metadata).
@@ -90,6 +97,7 @@ def invoke_with_validation(
                     "model": model,
                 }
                 cost = estimate_cost(model, usage["input_tokens"], usage["output_tokens"])
+                usage["cost_usd"] = cost
                 logger.info(
                     "[%s] Tokens in=%d out=%d cost=$%.6f",
                     step_name,

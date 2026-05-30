@@ -1,16 +1,20 @@
 """Конфигурация ролей и фабрика LLM-обёрток (single engine, many faces)."""
+
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
-from langchain_core.messages import SystemMessage, HumanMessage, BaseMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableSerializable
 from langchain_openai import ChatOpenAI
 
 logger = logging.getLogger(__name__)
+
+_base_llm: ChatOpenAI | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -21,23 +25,27 @@ class RoleConfig:
     system_prompt: str
     temperature: float
     max_tokens: int
-    output_schema: Optional[dict[str, Any]] = None
+    output_schema: dict[str, Any] | None = None
     langsmith_tags: tuple[str, ...] = ()
 
 
-# Единый базовый engine — без глобальных temperature/max_tokens
-BASE_LLM: ChatOpenAI = ChatOpenAI(
-    model="gpt-4o",
-    streaming=False,
-)
+def get_base_llm() -> ChatOpenAI:
+    """Lazy-init LLM — не требует API key при import."""
+    global _base_llm
+    if _base_llm is None:
+        _base_llm = ChatOpenAI(
+            model=os.getenv("OPENAI_MODEL", "gpt-4o"),
+            streaming=False,
+        )
+    return _base_llm
 
 
-def create_role_runnable(config: RoleConfig) -> RunnableSerializable:
+def create_role_runnable(config: RoleConfig) -> RunnableSerializable[Any, Any]:
     """
     Создаёт изолированный runnable для конкретной роли.
     bind() не мутирует BASE_LLM.
     """
-    bound_llm = BASE_LLM.bind(
+    bound_llm = get_base_llm().bind(
         temperature=config.temperature,
         max_tokens=config.max_tokens,
     )
@@ -47,7 +55,7 @@ def create_role_runnable(config: RoleConfig) -> RunnableSerializable:
             ("placeholder", "{messages}"),
         ]
     )
-    runnable: RunnableSerializable = prompt | bound_llm
+    runnable: RunnableSerializable[Any, Any] = prompt | bound_llm
     logger.debug(
         "Created runnable '%s' (temp=%.2f, max_tokens=%d)",
         config.name,
@@ -60,7 +68,7 @@ def create_role_runnable(config: RoleConfig) -> RunnableSerializable:
 def prepare_role_messages(
     config: RoleConfig,
     user_prompt: str,
-    context_messages: Optional[list[BaseMessage]] = None,
+    context_messages: list[BaseMessage] | None = None,
 ) -> list[BaseMessage]:
     """Формирует список сообщений: SystemMessage + контекст + задача."""
     messages: list[BaseMessage] = [SystemMessage(content=config.system_prompt)]

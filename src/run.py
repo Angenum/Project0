@@ -1,4 +1,5 @@
 """CLI entrypoint для локального запуска пайплайна."""
+
 from __future__ import annotations
 
 import json
@@ -73,7 +74,9 @@ def main() -> None:
             feedback = "" if is_approve else input("Feedback: ").strip()
 
             resume_payload = {"action": "approve" if is_approve else "reject", "feedback": feedback}
-            for resume_chunk in graph.stream(Command(resume=resume_payload), config, stream_mode="updates"):
+            for _resume_chunk in graph.stream(
+                Command(resume=resume_payload), config, stream_mode="updates"
+            ):
                 logger.info("Resume chunk", extra={"step": "resume", "thread_id": thread_id})
 
     logger.info("Pipeline finished", extra={"step": "done", "thread_id": thread_id})

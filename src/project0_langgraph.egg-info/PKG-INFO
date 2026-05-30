@@ -1,0 +1,24 @@
+Metadata-Version: 2.4
+Name: project0-langgraph
+Version: 0.1.0
+Summary: Role-Chaining Pipeline на LangGraph
+Requires-Python: >=3.11
+Requires-Dist: langgraph>=0.3.0
+Requires-Dist: langchain-core>=0.3.0
+Requires-Dist: langchain-openai>=0.3.0
+Requires-Dist: pydantic>=2.0
+Requires-Dist: fastapi>=0.115.0
+Requires-Dist: uvicorn[standard]>=0.32.0
+Requires-Dist: python-dotenv>=1.0.0
+Requires-Dist: httpx>=0.27.0
+Requires-Dist: prometheus-client>=0.21.0
+Requires-Dist: langgraph-checkpoint-sqlite>=2.0.0
+Provides-Extra: postgres
+Requires-Dist: langgraph-checkpoint-postgres>=2.0.0; extra == "postgres"
+Requires-Dist: psycopg[binary]>=3.2.0; extra == "postgres"
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.24.0; extra == "dev"
+Requires-Dist: black>=24.0.0; extra == "dev"
+Requires-Dist: ruff>=0.8.0; extra == "dev"
+Requires-Dist: mypy>=1.13.0; extra == "dev"

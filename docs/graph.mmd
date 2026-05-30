@@ -1,0 +1,50 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	orchestrator(orchestrator)
+	researcher(researcher)
+	architect(architect)
+	approve_architect(approve_architect)
+	tdd_engineer(tdd_engineer)
+	builder(builder)
+	approve_builder(approve_builder)
+	prompt_engineer(prompt_engineer)
+	tester(tester)
+	critic(critic)
+	security_auditor(security_auditor)
+	approve_security(approve_security)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> orchestrator;
+	approve_architect -.-> __end__;
+	approve_architect -. &nbsp;__continue__&nbsp; .-> tdd_engineer;
+	approve_builder -.-> __end__;
+	approve_builder -. &nbsp;__continue__&nbsp; .-> prompt_engineer;
+	approve_security -. &nbsp;__continue__&nbsp; .-> __end__;
+	architect -.-> __end__;
+	architect -.-> approve_architect;
+	builder -.-> __end__;
+	builder -.-> approve_builder;
+	critic -.-> __end__;
+	critic -.-> builder;
+	critic -.-> security_auditor;
+	orchestrator -.-> __end__;
+	orchestrator -.-> researcher;
+	prompt_engineer -.-> __end__;
+	prompt_engineer -.-> tester;
+	researcher -.-> __end__;
+	researcher -.-> architect;
+	security_auditor -.-> __end__;
+	security_auditor -.-> approve_security;
+	tdd_engineer -.-> __end__;
+	tdd_engineer -.-> builder;
+	tester -.-> __end__;
+	tester -.-> builder;
+	tester -.-> critic;
+	builder -.-> builder;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

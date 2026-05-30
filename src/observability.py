@@ -1,8 +1,8 @@
 """LangSmith tracing и конфигурация RunnableConfig per step."""
+
 from __future__ import annotations
 
 import os
-from typing import Any
 
 from langchain_core.runnables import RunnableConfig
 
@@ -29,4 +29,4 @@ def init_langsmith() -> None:
     if not os.getenv("LANGSMITH_API_KEY"):
         import warnings
 
-        warnings.warn("LANGSMITH_API_KEY not set. Tracing disabled.")
+        warnings.warn("LANGSMITH_API_KEY not set. Tracing disabled.", stacklevel=2)

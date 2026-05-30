@@ -1,7 +1,9 @@
 """Схема состояния пайплайна с reducers для слияния словарей."""
+
 from __future__ import annotations
 
-from typing import TypedDict, Annotated, Any, Optional
+from typing import Annotated, Any, TypedDict
+
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 
@@ -22,7 +24,7 @@ class PipelineState(TypedDict):
 
     # --- Входные данные ---
     goal: str
-    requirements: Optional[str]
+    requirements: str | None
 
     # --- Коммуникация с LLM ---
     messages: Annotated[list[BaseMessage], add_messages]
@@ -37,7 +39,7 @@ class PipelineState(TypedDict):
     # --- Метаданные и observability ---
     metadata: Annotated[dict[str, Any], _merge_dicts]
     current_step: str
-    error: Optional[str]
+    error: Any | None
 
 
 def get_retry_count(state: PipelineState, key: str) -> int:

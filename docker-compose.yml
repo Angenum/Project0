@@ -19,7 +19,7 @@ services:
 
   api:
     build:
-      context: project0-langgraph
+      context: .
       dockerfile: Dockerfile
     ports:
       - "8000:8000"

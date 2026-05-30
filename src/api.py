@@ -1,4 +1,5 @@
 """FastAPI обёртка для пайплайна с SSE streaming и graceful shutdown."""
+
 from __future__ import annotations
 
 import json
@@ -12,12 +13,14 @@ from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command
+from pydantic import BaseModel, Field
 
 from .graph import build_pipeline
 from .persistence import get_checkpointer
 from .state import PipelineState
+
 
 # --- JSON structured logging ---
 class JSONFormatter(logging.Formatter):
@@ -36,6 +39,7 @@ class JSONFormatter(logging.Formatter):
             log["exception"] = self.formatException(record.exc_info)
         return json.dumps(log, ensure_ascii=False)
 
+
 _handler = logging.StreamHandler(sys.stdout)
 _handler.setFormatter(JSONFormatter())
 logging.getLogger().addHandler(_handler)
@@ -44,8 +48,14 @@ logging.getLogger().setLevel(os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
 
 # Глобальный граф (singleton)
-_graph = None
-_checkpointer = None
+_graph: CompiledStateGraph | None = None
+_checkpointer: Any | None = None
+
+
+def _require_graph() -> CompiledStateGraph:
+    if _graph is None:
+        raise HTTPException(status_code=503, detail="Pipeline graph is not initialized")
+    return _graph
 
 
 @asynccontextmanager
@@ -101,10 +111,12 @@ async def run_pipeline(req: PipelineRequest) -> dict[str, Any]:
     }
 
     try:
-        result = _graph.invoke(initial_state, config)
+        result = _require_graph().invoke(initial_state, config)
     except Exception as exc:
-        logger.exception("Pipeline invocation failed", extra={"step": "api", "thread_id": thread_id})
-        raise HTTPException(status_code=500, detail=str(exc))
+        logger.exception(
+            "Pipeline invocation failed", extra={"step": "api", "thread_id": thread_id}
+        )
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     return {
         "thread_id": thread_id,
@@ -134,7 +146,7 @@ async def run_pipeline_stream(req: PipelineRequest):
     }
 
     async def event_generator():
-        async for chunk in _graph.astream(initial_state, config, stream_mode="updates"):
+        async for chunk in _require_graph().astream(initial_state, config, stream_mode="updates"):
             payload = json.dumps(chunk, default=str)
             yield f"data: {payload}\n\n"
 
@@ -154,10 +166,10 @@ async def resume_pipeline(thread_id: str, req: ResumeRequest) -> dict[str, Any]:
     payload = {"action": req.action, "feedback": req.feedback}
 
     try:
-        result = _graph.invoke(Command(resume=payload), config)
+        result = _require_graph().invoke(Command(resume=payload), config)
     except Exception as exc:
         logger.exception("Resume failed", extra={"step": "api", "thread_id": thread_id})
-        raise HTTPException(status_code=500, detail=str(exc))
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     return {
         "thread_id": thread_id,
@@ -172,9 +184,9 @@ async def resume_pipeline(thread_id: str, req: ResumeRequest) -> dict[str, Any]:
 async def get_state(thread_id: str) -> dict[str, Any]:
     config = {"configurable": {"thread_id": thread_id}}
     try:
-        state = _graph.get_state(config)
+        state = _require_graph().get_state(config)
     except Exception as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return {
         "thread_id": thread_id,
         "current_step": state.values.get("current_step"),

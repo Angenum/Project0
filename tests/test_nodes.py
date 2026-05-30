@@ -1,13 +1,14 @@
 """Unit-тесты отдельных узлов с моками LLM."""
+
 from __future__ import annotations
 
 import json
 from typing import Any
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.nodes import orchestrator_node, builder_node
+from src.nodes import builder_node, orchestrator_node
 from src.state import PipelineState
 
 
@@ -63,14 +64,16 @@ def test_orchestrator_validation_failure():
 
 
 def test_builder_reads_feedback():
-    state = make_state({
-        "artifacts": {
-            "architect_ard": {"components": []},
-            "tdd_tests": {"tests": []},
-            "tester_report": {"failed_tests": ["test_a"], "logs": ["error"]},
-        },
-        "flags": {"tests_passed": False, "critic_passed": True},
-    })
+    state = make_state(
+        {
+            "artifacts": {
+                "architect_ard": {"components": []},
+                "tdd_tests": {"tests": []},
+                "tester_report": {"failed_tests": ["test_a"], "logs": ["error"]},
+            },
+            "flags": {"tests_passed": False, "critic_passed": True},
+        }
+    )
     fake = MagicMock()
     fake.content = json.dumps({"files": [], "entrypoint": "main.py", "dependencies": []})
     fake.usage_metadata = {"input_tokens": 200, "output_tokens": 100, "total_tokens": 300}
