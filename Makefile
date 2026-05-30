@@ -1,7 +1,7 @@
 .PHONY: install test lint format run docker-up docker-down docs
 
 install:
-	pip install -e ".[dev,postgres]"
+	pip install -e ".[dev]"
 
 test:
 	pytest tests/ -v --tb=short

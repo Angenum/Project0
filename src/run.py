@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from langgraph.types import Command
 
 from .graph import build_pipeline
-from .persistence import get_checkpointer
+from .persistence import create_sync_checkpointer
 from .state import PipelineState
 
 
@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 
 def main() -> None:
     load_dotenv()
-    checkpointer = get_checkpointer()
+    checkpointer = create_sync_checkpointer()
     graph = build_pipeline(checkpointer=checkpointer)
 
     thread_id = str(uuid4())

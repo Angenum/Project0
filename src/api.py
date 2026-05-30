@@ -18,7 +18,7 @@ from langgraph.types import Command
 from pydantic import BaseModel, Field
 
 from .graph import build_pipeline
-from .persistence import get_checkpointer
+from .persistence import async_checkpointer_lifecycle
 from .state import PipelineState
 
 
@@ -47,9 +47,7 @@ logging.getLogger().setLevel(os.getenv("LOG_LEVEL", "INFO"))
 
 logger = logging.getLogger(__name__)
 
-# Глобальный граф (singleton)
 _graph: CompiledStateGraph | None = None
-_checkpointer: Any | None = None
 
 
 def _require_graph() -> CompiledStateGraph:
@@ -60,14 +58,13 @@ def _require_graph() -> CompiledStateGraph:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _graph, _checkpointer
-    _checkpointer = get_checkpointer()
-    _graph = build_pipeline(checkpointer=_checkpointer)
-    logger.info("Pipeline graph compiled", extra={"step": "init", "thread_id": "system"})
-    yield
-    if _checkpointer and hasattr(_checkpointer, "close"):
-        await _checkpointer.close()
-        logger.info("Checkpointer closed", extra={"step": "shutdown", "thread_id": "system"})
+    global _graph
+    async with async_checkpointer_lifecycle() as checkpointer:
+        _graph = build_pipeline(checkpointer=checkpointer)
+        logger.info("Pipeline graph compiled", extra={"step": "init", "thread_id": "system"})
+        yield
+    _graph = None
+    logger.info("Checkpointer closed", extra={"step": "shutdown", "thread_id": "system"})
 
 
 app = FastAPI(title="Project0 Role-Chaining Pipeline", lifespan=lifespan)
@@ -111,7 +108,7 @@ async def run_pipeline(req: PipelineRequest) -> dict[str, Any]:
     }
 
     try:
-        result = _require_graph().invoke(initial_state, config)
+        result = await _require_graph().ainvoke(initial_state, config)
     except Exception as exc:
         logger.exception(
             "Pipeline invocation failed", extra={"step": "api", "thread_id": thread_id}
@@ -166,7 +163,7 @@ async def resume_pipeline(thread_id: str, req: ResumeRequest) -> dict[str, Any]:
     payload = {"action": req.action, "feedback": req.feedback}
 
     try:
-        result = _require_graph().invoke(Command(resume=payload), config)
+        result = await _require_graph().ainvoke(Command(resume=payload), config)
     except Exception as exc:
         logger.exception("Resume failed", extra={"step": "api", "thread_id": thread_id})
         raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -184,7 +181,7 @@ async def resume_pipeline(thread_id: str, req: ResumeRequest) -> dict[str, Any]:
 async def get_state(thread_id: str) -> dict[str, Any]:
     config = {"configurable": {"thread_id": thread_id}}
     try:
-        state = _require_graph().get_state(config)
+        state = await _require_graph().aget_state(config)
     except Exception as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return {

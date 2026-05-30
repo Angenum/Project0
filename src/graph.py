@@ -19,7 +19,7 @@ from .nodes import (
     tdd_engineer_node,
     tester_node,
 )
-from .persistence import get_checkpointer
+from .persistence import create_sync_checkpointer
 from .routers import (
     make_route_unless_error,
     route_after_approval,
@@ -33,7 +33,7 @@ from .state import PipelineState
 def build_pipeline(checkpointer: Any | None = None) -> CompiledStateGraph:
     """Собирает граф."""
     if checkpointer is None:
-        checkpointer = get_checkpointer()
+        checkpointer = create_sync_checkpointer()
 
     builder = StateGraph(PipelineState)
 

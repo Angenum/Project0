@@ -1,0 +1,32 @@
+version: "3.9"
+
+# Опционально: production checkpointing через Postgres (LangGraph AsyncPostgresSaver)
+# Запуск: docker compose -f docker-compose.yml -f docker-compose.postgres.yml up
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: pipeline_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d pipeline_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    environment:
+      - CHECKPOINT_BACKEND=postgres
+      - DATABASE_URL=postgresql://user:pass@postgres:5432/pipeline_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

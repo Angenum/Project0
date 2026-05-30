@@ -6,11 +6,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from langgraph.checkpoint.memory import InMemorySaver
+
 from src.graph import build_pipeline
 
 
 def main() -> None:
-    graph = build_pipeline()
+    graph = build_pipeline(checkpointer=InMemorySaver())
     mermaid = graph.get_graph().draw_mermaid()
     docs_dir = Path("docs")
     docs_dir.mkdir(exist_ok=True)

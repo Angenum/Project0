@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.memory import InMemorySaver
 
 from src.graph import build_pipeline
 
@@ -11,7 +11,7 @@ from src.graph import build_pipeline
 @pytest.fixture
 def memory_graph():
     """Граф с in-memory checkpointer для быстрых тестов."""
-    return build_pipeline(checkpointer=MemorySaver())
+    return build_pipeline(checkpointer=InMemorySaver())
 
 
 @pytest.fixture
